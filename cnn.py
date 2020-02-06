@@ -10,6 +10,28 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
+def generate_model(dropout,HIDDEN_UNITS,OPTIMIZER):
+	model_new = Sequential([
+    Conv2D(16, 3, padding='same', activation='relu', 
+           input_shape=(IMG_HEIGHT, IMG_WIDTH ,3)),
+    MaxPooling2D(),
+    Dropout(dropout),
+    Conv2D(32, 3, padding='same', activation='relu'),
+    MaxPooling2D(),
+    Conv2D(64, 3, padding='same', activation='relu'),
+    MaxPooling2D(),
+    Dropout(dropout),
+    Flatten(),
+    Dense(HIDDEN_UNITS, activation='relu'),
+    Dense(1, activation='sigmoid')
+	])
+
+	model_new.compile(optimizer=OPTIMIZER,
+              loss='binary_crossentropy',
+              metrics=['accuracy'])
+
+	model_new.summary()
+	return model_new
 #Configurations for the model
 
 batch_size = 128
@@ -48,66 +70,66 @@ total_val = num_cats_val + num_dogs_val
 train_image_generator = ImageDataGenerator(rescale=1./255) # Generator for our training data
 validation_image_generator = ImageDataGenerator(rescale=1./255) # Generator for our validation data
 
-train_data_gen = train_image_generator.flow_from_directory(batch_size=batch_size,
-                                                           directory=train_dir,
-                                                           shuffle=True,
-                                                           target_size=(IMG_HEIGHT, IMG_WIDTH),
-                                                           class_mode='binary')
+# train_data_gen = train_image_generator.flow_from_directory(batch_size=batch_size,
+#                                                            directory=train_dir,
+#                                                            shuffle=True,
+#                                                            target_size=(IMG_HEIGHT, IMG_WIDTH),
+#                                                            class_mode='binary')
 
-val_data_gen = validation_image_generator.flow_from_directory(batch_size=batch_size,
-                                                              directory=validation_dir,
-                                                              target_size=(IMG_HEIGHT, IMG_WIDTH),
-                                                              class_mode='binary')
+# val_data_gen = validation_image_generator.flow_from_directory(batch_size=batch_size,
+#                                                               directory=validation_dir,
+#                                                               target_size=(IMG_HEIGHT, IMG_WIDTH),
+#                                                               class_mode='binary')
 
-model = Sequential([
-    Conv2D(16, 3, padding='same', activation='relu', input_shape=(IMG_HEIGHT, IMG_WIDTH ,3)),
-    MaxPooling2D(),
-    Conv2D(32, 3, padding='same', activation='relu'),
-    MaxPooling2D(),
-    Conv2D(64, 3, padding='same', activation='relu'),
-    MaxPooling2D(),
-    Flatten(),
-    Dense(HIDDEN_UNITS, activation='relu'),
-    Dense(1, activation='sigmoid')
-])
-
-
-model.compile(optimizer=OPTIMIZER,
-              loss='binary_crossentropy',
-              metrics=['accuracy'])
-
-model.summary()
+# model = Sequential([
+#     Conv2D(16, 3, padding='same', activation='relu', input_shape=(IMG_HEIGHT, IMG_WIDTH ,3)),
+#     MaxPooling2D(),
+#     Conv2D(32, 3, padding='same', activation='relu'),
+#     MaxPooling2D(),
+#     Conv2D(64, 3, padding='same', activation='relu'),
+#     MaxPooling2D(),
+#     Flatten(),
+#     Dense(HIDDEN_UNITS, activation='relu'),
+#     Dense(1, activation='sigmoid')
+# ])
 
 
-history = model.fit_generator(
-    train_data_gen,
-    steps_per_epoch=total_train // batch_size,
-    epochs=epochs,
-    validation_data=val_data_gen,
-    validation_steps=total_val // batch_size
-)
+# model.compile(optimizer=OPTIMIZER,
+#               loss='binary_crossentropy',
+#               metrics=['accuracy'])
 
-acc = history.history['acc']
-val_acc = history.history['val_acc']
+# model.summary()
 
-loss = history.history['loss']
-val_loss = history.history['val_loss']
 
-epochs_range = range(epochs)
+# history = model.fit_generator(
+#     train_data_gen,
+#     steps_per_epoch=total_train // batch_size,
+#     epochs=epochs,
+#     validation_data=val_data_gen,
+#     validation_steps=total_val // batch_size
+# )
 
-plt.figure(figsize=(8, 8))
-plt.subplot(1, 2, 1)
-plt.plot(epochs_range, acc, label='Training Accuracy')
-plt.plot(epochs_range, val_acc, label='Validation Accuracy')
-plt.legend(loc='lower right')
-plt.title('Training and Validation Accuracy')
+# acc = history.history['acc']
+# val_acc = history.history['val_acc']
 
-plt.subplot(1, 2, 2)
-plt.plot(epochs_range, loss, label='Training Loss')
-plt.plot(epochs_range, val_loss, label='Validation Loss')
-plt.legend(loc='upper right')
-plt.title('Training and Validation Loss')
-plt.show()
+# loss = history.history['loss']
+# val_loss = history.history['val_loss']
+
+# epochs_range = range(epochs)
+
+# plt.figure(figsize=(8, 8))
+# plt.subplot(1, 2, 1)
+# plt.plot(epochs_range, acc, label='Training Accuracy')
+# plt.plot(epochs_range, val_acc, label='Validation Accuracy')
+# plt.legend(loc='lower right')
+# plt.title('Training and Validation Accuracy')
+
+# plt.subplot(1, 2, 2)
+# plt.plot(epochs_range, loss, label='Training Loss')
+# plt.plot(epochs_range, val_loss, label='Validation Loss')
+# plt.legend(loc='upper right')
+# plt.title('Training and Validation Loss')
+# plt.show()
 
 image_gen_train = ImageDataGenerator(
                     rescale=1./255,
@@ -115,7 +137,7 @@ image_gen_train = ImageDataGenerator(
                     width_shift_range=.15,
                     height_shift_range=.15,
                     horizontal_flip=True,
-                    zoom_range=0.5
+                    zoom_range=0.25
                     )
 
 train_data_gen = image_gen_train.flow_from_directory(batch_size=batch_size,
@@ -129,54 +151,46 @@ image_gen_val = ImageDataGenerator(rescale=1./255)
 val_data_gen = image_gen_val.flow_from_directory(batch_size=batch_size,
                                                  directory=validation_dir,
                                                  target_size=(IMG_HEIGHT, IMG_WIDTH),
+
                                                  class_mode='binary')
-model_new = Sequential([
-    Conv2D(16, 3, padding='same', activation='relu', 
-           input_shape=(IMG_HEIGHT, IMG_WIDTH ,3)),
-    MaxPooling2D(),
-    Dropout(0.2),
-    Conv2D(32, 3, padding='same', activation='relu'),
-    MaxPooling2D(),
-    Conv2D(64, 3, padding='same', activation='relu'),
-    MaxPooling2D(),
-    Dropout(0.2),
-    Flatten(),
-    Dense(HIDDEN_UNITS, activation='relu'),
-    Dense(1, activation='sigmoid')
-])
+accuracies = []
+val_accuracies = []
+losses = []
+val_losses =[]
 
-model_new.compile(optimizer=OPTIMIZER,
-              loss='binary_crossentropy',
-              metrics=['accuracy'])
+for idx in range (1,5):
+	model_new = generate_model(idx/10,HIDDEN_UNITS,OPTIMIZER)
 
-model_new.summary()
+	history = model_new.fit_generator(
+    	train_data_gen,
+    	steps_per_epoch=total_train // batch_size,
+    	epochs=epochs,
+    	validation_data=val_data_gen,
+    	validation_steps=total_val // batch_size
+	)
 
-history = model_new.fit_generator(
-    train_data_gen,
-    steps_per_epoch=total_train // batch_size,
-    epochs=epochs,
-    validation_data=val_data_gen,
-    validation_steps=total_val // batch_size
-)
+	accuracies.append(history.history['acc'])
+	val_accuracies.append(history.history['val_acc'])
 
-acc = history.history['acc']
-val_acc = history.history['val_acc']
+	losses.append(history.history['loss'])
+	val_losses.append(history.history['val_loss'])
 
-loss = history.history['loss']
-val_loss = history.history['val_loss']
 
 epochs_range = range(epochs)
 
 plt.figure(figsize=(8, 8))
 plt.subplot(1, 2, 1)
-plt.plot(epochs_range, acc, label='Training Accuracy')
-plt.plot(epochs_range, val_acc, label='Validation Accuracy')
+for idx in range (1,5):
+	plt.plot(epochs_range, accuracies[idx], label='Training Accuracy with dropout '+str(idx/10))
+	plt.plot(epochs_range, val_accuracies, label='Validation Accuracy with dropout '+str(idx/10))
+
 plt.legend(loc='lower right')
 plt.title('Training and Validation Accuracy')
 
 plt.subplot(1, 2, 2)
-plt.plot(epochs_range, loss, label='Training Loss')
-plt.plot(epochs_range, val_loss, label='Validation Loss')
+for idx in range (1,5):
+	plt.plot(epochs_range, lossses[idx], label='Training Loss with dropout '+str(idx/10))
+	plt.plot(epochs_range, val_losses[idx], label='Validation Loss with dropout '+str(idx/10))
 plt.legend(loc='upper right')
 plt.title('Training and Validation Loss')
 plt.show()
