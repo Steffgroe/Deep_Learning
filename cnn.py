@@ -80,48 +80,6 @@ def test_model_augmentation_cnn(image_gen_train,train_data_gen,image_gen_val,val
 		plt.show()
 
 
-def test_model_vgg_16():
-	accuracies = []
-	val_accuracies = []
-	losses = []
-	val_losses =[]
-
-	image_gen_train = ImageDataGenerator(
-                    rescale=1./255,
-                    rotation_range=45,
-                    width_shift_range=.15,
-                    height_shift_range=.15,
-                    horizontal_flip=True,
-                    zoom_range=0.25
-                    )
-
-	train_data_gen = image_gen_train.flow_from_directory(batch_size=16,
-                                                     directory=train_dir,
-                                                     shuffle=True,
-                                                     target_size=(224, 224),
-                                                     class_mode='binary')
-
-	image_gen_val = ImageDataGenerator(rescale=1./255)
-
-	val_data_gen = image_gen_val.flow_from_directory(batch_size=16,
-                                                 directory=validation_dir,
-                                                 target_size=(224, 224),
-
-                                                 class_mode='binary')
-	model_new = create_VGG_16()
-	
-
-	checkpoint = ModelCheckpoint("vgg16_1.h5", monitor='val_acc', verbose=1, save_best_only=True, save_weights_only=False, mode='auto', period=1)
-	early = EarlyStopping(monitor='val_acc', min_delta=0, patience=20, verbose=1, mode='auto')
-	
-	history = model_new.fit_generator(
-    	train_data_gen,
-    	steps_per_epoch=100,
-    	epochs=100,
-    	validation_data=val_data_gen,
-    	validation_steps=100
-	)
-
 	
 #Configurations for the model
 
@@ -196,4 +154,3 @@ val_data_gen = image_gen_val.flow_from_directory(batch_size=batch_size,
 
                                                  class_mode='binary')
 # test_model_augmentation_cnn(image_gen_train,train_data_gen,image_gen_val,val_data_gen)
-test_model_vgg_16()
