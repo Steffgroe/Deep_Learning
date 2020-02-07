@@ -5,6 +5,7 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Conv2D, Flatten, Dropout, MaxPooling2D
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
+from tensorflow.keras.optimizers import Adam
 import os
 import numpy as np
 import matplotlib.pyplot as plt
@@ -36,7 +37,8 @@ def create_VGG_16():
 	model.add(Flatten())
 	model.add(Dense(units=4096,activation="relu"))
 	model.add(Dense(units=4096,activation="relu"))
-	model.add(Dense(units=1, activation="softmax"))
+	model.add(Dense(units=2, activation="softmax"))
+	
 	model.compile(optimizer='adam',
               loss='binary_crossentropy',
               metrics=['accuracy'])
@@ -59,21 +61,21 @@ def test_model_vgg_16():
                     height_shift_range=.15,
                     horizontal_flip=True,
                     zoom_range=0.25
+                 
                     )
 
 	train_data_gen = image_gen_train.flow_from_directory(batch_size=16,
                                                      directory=train_dir,
                                                      shuffle=True,
-                                                     target_size=(150, 150),
-                                                     class_mode='binary')
+                                                     target_size=(150, 150))
 
-	image_gen_val = ImageDataGenerator(rescale=1./255)
+	image_gen_val = image_gen_train = ImageDataGenerator(
+                    rescale=1./255,
+                       )
 
 	val_data_gen = image_gen_val.flow_from_directory(batch_size=16,
                                                  directory=validation_dir,
-                                                 target_size=(150, 150),
-
-                                                 class_mode='binary')
+                                                 target_size=(150, 150))
 	model_new = create_VGG_16()
 	
 
@@ -85,15 +87,15 @@ def test_model_vgg_16():
     	steps_per_epoch=100,
     	epochs=100,
     	validation_data=val_data_gen,
-    	validation_steps=100
-	)
+    	validation_steps=10,
+    	callbacks=[checkpoint,early])
 	acc = history.history['acc']
 	val_acc = history.history['val_acc']
 
 	loss = history.history['loss']
 	val_loss = history.history['val_loss']
 
-	epochs_range = range(epochs)
+	epochs_range = 100
 
 	plt.figure(figsize=(8, 8))
 	plt.subplot(1, 2, 1)
