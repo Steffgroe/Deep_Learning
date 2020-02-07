@@ -5,7 +5,7 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Conv2D, Flatten, Dropout, MaxPooling2D
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
-from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.optimizers import SGD
 import os
 import numpy as np
 import matplotlib.pyplot as plt
@@ -39,43 +39,33 @@ def create_VGG_16():
 	model.add(Dense(units=4096,activation="relu"))
 	model.add(Dense(units=2, activation="softmax"))
 	
-	model.compile(optimizer='adam',
-              loss='binary_crossentropy',
-              metrics=['accuracy'])
-
-	model.summary()
-
+	# compile model
+	opt = SGD(lr=0.001, momentum=0.9)
+	model.compile(optimizer=opt, loss='binary_crossentropy', metrics=['accuracy'])
 
 	return model
 
-def test_model_vgg_16():
+def test_model_vgg_16(total_train,total_val):
 	accuracies = []
 	val_accuracies = []
 	losses = []
 	val_losses =[]
 
-	image_gen_train = ImageDataGenerator(
-                    rescale=1./255,
-                    rotation_range=45,
-                    width_shift_range=.15,
-                    height_shift_range=.15,
-                    horizontal_flip=True,
-                    zoom_range=0.25
-                 
-                    )
+	image_gen_train = ImageDataGenerator(rescale=1.0/255.0)
+                                       
 
 	train_data_gen = image_gen_train.flow_from_directory(batch_size=16,
                                                      directory=train_dir,
                                                      shuffle=True,
-                                                     target_size=(150, 150))
+                                                     target_size=(150, 150),
+                                                     class_mode='binary')
 
-	image_gen_val = image_gen_train = ImageDataGenerator(
-                    rescale=1./255,
-                       )
+	image_gen_val = image_gen_train = ImageDataGenerator(rescale=1.0/255.0)
 
 	val_data_gen = image_gen_val.flow_from_directory(batch_size=16,
                                                  directory=validation_dir,
-                                                 target_size=(150, 150))
+                                                 target_size=(150, 150),
+                                                 class_mode='binary')
 	model_new = create_VGG_16()
 	
 
@@ -84,10 +74,10 @@ def test_model_vgg_16():
 	
 	history = model_new.fit_generator(
     	train_data_gen,
-    	steps_per_epoch=100,
+    	steps_per_epoch= total_train //16,
     	epochs=100,
     	validation_data=val_data_gen,
-    	validation_steps=10,
+    	validation_steps=total_val //16,
     	callbacks=[checkpoint,early])
 	acc = history.history['acc']
 	val_acc = history.history['val_acc']
@@ -99,14 +89,14 @@ def test_model_vgg_16():
 
 	plt.figure(figsize=(8, 8))
 	plt.subplot(1, 2, 1)
-	plt.plot(epochs_range, acc, label='Training Accuracy')
-	plt.plot(epochs_range, val_acc, label='Validation Accuracy')
+	plt.plot(acc, label='Training Accuracy')
+	plt.plot(val_acc, label='Validation Accuracy')
 	plt.legend(loc='lower right')
 	plt.title('Training and Validation Accuracy')
 
 	plt.subplot(1, 2, 2)
-	plt.plot(epochs_range, loss, label='Training Loss')
-	plt.plot(epochs_range, val_loss, label='Validation Loss')
+	plt.plot(loss, label='Training Loss')
+	plt.plot(val_loss, label='Validation Loss')
 	plt.legend(loc='upper right')
 	plt.title('Training and Validation Loss VGG 16')
 	plt.show()
@@ -132,4 +122,4 @@ num_dogs_val = len(os.listdir(validation_dogs_dir))
 total_train = num_cats_tr + num_dogs_tr
 total_val = num_cats_val + num_dogs_val
 
-test_model_vgg_16()
+test_model_vgg_16(total_train,total_val)
