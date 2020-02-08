@@ -1,49 +1,29 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 import tensorflow as tf
 
-from tensorflow.keras.models import Sequential
+from tensorflow.keras.models import Sequential 
+from tensorflow.keras import Model
 from tensorflow.keras.layers import Dense, Conv2D, Flatten, Dropout, MaxPooling2D
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
 from tensorflow.keras.optimizers import SGD
+from tensorflow.keras.applications import VGG16
 import os
 import numpy as np
 import matplotlib.pyplot as plt
 
 def create_VGG_16():
-	model = Sequential()
-	model.add(Conv2D(input_shape=(150,150,3),filters=64,kernel_size=(3,3),padding="same", activation="relu"))
+	vgg16 = VGG16(weights='imagenet', include_top=True)
 
-	model.add(Conv2D(filters=64,kernel_size=(3,3),padding="same", activation="relu"))
-	model.add(MaxPooling2D(pool_size=(2,2),strides=(2,2)))
-	model.add(Conv2D(filters=128, kernel_size=(3,3), padding="same", activation="relu"))
-	model.add(Conv2D(filters=128, kernel_size=(3,3), padding="same", activation="relu"))
-	model.add(MaxPooling2D(pool_size=(2,2),strides=(2,2)))
-	model.add(Conv2D(filters=256, kernel_size=(3,3), padding="same", activation="relu"))
-	model.add(Conv2D(filters=256, kernel_size=(3,3), padding="same", activation="relu"))
-	model.add(Conv2D(filters=256, kernel_size=(3,3), padding="same", activation="relu"))
+	#Add a layer where input is the output of the  second last layer 
+	x = Dense(1, activation='softmax', name='predictions')(vgg16.layers[-2].output)
 
-	model.add(MaxPooling2D(pool_size=(2,2),strides=(2,2)))
-	model.add(Conv2D(filters=512, kernel_size=(3,3), padding="same", activation="relu"))
-	model.add(Conv2D(filters=512, kernel_size=(3,3), padding="same", activation="relu"))
-	model.add(Conv2D(filters=512, kernel_size=(3,3), padding="same", activation="relu"))
-	model.add(MaxPooling2D(pool_size=(2,2),strides=(2,2)))
-
-	model.add(Conv2D(filters=512, kernel_size=(3,3), padding="same", activation="relu"))
-	model.add(Conv2D(filters=512, kernel_size=(3,3), padding="same", activation="relu"))
-	model.add(Conv2D(filters=512, kernel_size=(3,3), padding="same", activation="relu"))
-	model.add(MaxPooling2D(pool_size=(2,2),strides=(2,2)))
-
-	model.add(Flatten())
-	model.add(Dense(units=4096,activation="relu"))
-	model.add(Dense(units=4096,activation="relu"))
-	model.add(Dense(units=2, activation="softmax"))
-	
-	# compile model
-	opt = SGD(lr=0.001, momentum=0.9)
-	model.compile(optimizer=opt, loss='binary_crossentropy', metrics=['accuracy'])
-
-	return model
+	#Then create the corresponding model 
+	my_model = Model(inputs=vgg16.input, outputs=x)
+	sgd = SGD(lr=0.1, decay=1e-6, momentum=0.9, nesterov=True)
+	my_model.compile(optimizer=sgd, loss='binary_crossentropy')
+		
+	return my_model
 
 def test_model_vgg_16(total_train,total_val):
 	accuracies = []
@@ -51,20 +31,25 @@ def test_model_vgg_16(total_train,total_val):
 	losses = []
 	val_losses =[]
 
-	image_gen_train = ImageDataGenerator(rescale=1.0/255.0)
+	image_gen_train = ImageDataGenerator(rescale=1.0/255.0,
+		 			rotation_range=45,
+                    width_shift_range=.15,
+                    height_shift_range=.15,
+                    horizontal_flip=True,
+                    zoom_range=0.25)
                                        
 
 	train_data_gen = image_gen_train.flow_from_directory(batch_size=16,
                                                      directory=train_dir,
                                                      shuffle=True,
-                                                     target_size=(150, 150),
+                                                     target_size=(224, 224),
                                                      class_mode='binary')
 
 	image_gen_val = image_gen_train = ImageDataGenerator(rescale=1.0/255.0)
 
 	val_data_gen = image_gen_val.flow_from_directory(batch_size=16,
                                                  directory=validation_dir,
-                                                 target_size=(150, 150),
+                                                 target_size=(224, 224),
                                                  class_mode='binary')
 	model_new = create_VGG_16()
 	
