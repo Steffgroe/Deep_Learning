@@ -1,4 +1,4 @@
-# Code taken from https://www.tensorflow.org/tutorials/images/classification
+#Code taken from https://www.tensorflow.org/tutorials/images/classification
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 import tensorflow as tf
@@ -7,27 +7,13 @@ from tensorflow.keras.layers import Dense, Conv2D, Flatten, Dropout, MaxPooling2
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 import os
-import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-
-from tensorflow.keras.datasets import cifar10
-
-batch_size = 32
-num_classes = 10
-epochs = 100
-data_augmentation = True
-num_predictions = 20
-save_dir = os.path.join(os.getcwd(), 'saved_models')
-model_name = 'keras_cifar10_trained_model.h5'
-
-# The data, split between train and test sets:
-(x_train, y_train), (x_test, y_test) = cifar10.load_data()
-
-def generate_model(dropout,HIDDEN_UNITS,OPTIMIZER,x_train):
+import pandas as pd
+def generate_model(dropout,HIDDEN_UNITS,OPTIMIZER):
 	model_new = Sequential([
-    Conv2D(32, (3, 3), padding='same',
-                 input_shape=x_train.shape[1:]),
+    Conv2D(16, 3, padding='same', activation='relu', 
+           input_shape=(IMG_HEIGHT, IMG_WIDTH ,3)),
     MaxPooling2D(),
     Dropout(dropout),
     Conv2D(32, 3, padding='same', activation='relu'),
@@ -37,67 +23,76 @@ def generate_model(dropout,HIDDEN_UNITS,OPTIMIZER,x_train):
     Dropout(dropout),
     Flatten(),
     Dense(HIDDEN_UNITS, activation='relu'),
-    Dense(10, activation='sigmoid')
+    Dense(1, activation='sigmoid')
 	])
 
 	model_new.compile(optimizer=OPTIMIZER,
-              loss='categorical_crossentropy',
+              loss='binary_crossentropy',
               metrics=['accuracy'])
 
 	model_new.summary()
 	return model_new
+#Configurations for the model
 
-x_train = x_train.astype('float32')
-x_test = x_test.astype('float32')
-x_train /= 255
-x_test /= 255
-y_train = tf.keras.utils.to_categorical(y_train, num_classes)
-y_test = tf.keras.utils.to_categorical(y_test, num_classes)
-print("Loaded data")
-if not data_augmentation:
-    print('Not using data augmentation.')
-    model.fit(x_train, y_train,
-              batch_size=batch_size,
-              epochs=epochs,
-              validation_data=(x_test, y_test),
-              shuffle=True)
-else:
-    print('Using real-time data augmentation.')
-    # This will do preprocessing and realtime data augmentation:
-    datagen = ImageDataGenerator(
-        featurewise_center=False,  # set input mean to 0 over the dataset
-        samplewise_center=False,  # set each sample mean to 0
-        featurewise_std_normalization=False,  # divide inputs by std of the dataset
-        samplewise_std_normalization=False,  # divide each input by its std
-        zca_whitening=False,  # apply ZCA whitening
-        zca_epsilon=1e-06,  # epsilon for ZCA whitening
-        rotation_range=0,  # randomly rotate images in the range (degrees, 0 to 180)
-        # randomly shift images horizontally (fraction of total width)
-        width_shift_range=0.1,
-        # randomly shift images vertically (fraction of total height)
-        height_shift_range=0.1,
-        shear_range=0.,  # set range for random shear
-        zoom_range=0.,  # set range for random zoom
-        channel_shift_range=0.,  # set range for random channel shifts
-        # set mode for filling points outside the input boundaries
-        fill_mode='nearest',
-        cval=0.,  # value used for fill_mode = "constant"
-        horizontal_flip=True,  # randomly flip images
-        vertical_flip=False,  # randomly flip images
-        # set rescaling factor (applied before any other transformation)
-        rescale=None,
-        # set function that will be applied on each input
-        preprocessing_function=None,
-        # image data format, either "channels_first" or "channels_last"
-        data_format=None,
-        # fraction of images reserved for validation (strictly between 0 and 1)
-        validation_split=0.0)
+batch_size = 128
+epochs = 15
+IMG_HEIGHT = 150
+IMG_WIDTH = 150
+HIDDEN_UNITS =512
 
-    # Compute quantities required for feature-wise normalization
-    # (std, mean, and principal components if ZCA whitening is applied).
-print("test")
-datagen.fit(x_train)
-optimizers = [ 'adam','sgd','rmsprop','adagrad','adadelta']
+# Load the data 
+_URL = 'https://storage.googleapis.com/mledu-datasets/cats_and_dogs_filtered.zip'
+
+path_to_zip = tf.keras.utils.get_file('cats_and_dogs.zip', origin=_URL, extract=True)
+
+PATH = os.path.join(os.path.dirname(path_to_zip), 'cats_and_dogs_filtered')
+
+train_dir = os.path.join(PATH, 'train')
+validation_dir = os.path.join(PATH, 'validation')
+
+train_cats_dir = os.path.join(train_dir, 'cats')  # directory with our training cat pictures
+train_dogs_dir = os.path.join(train_dir, 'dogs')  # directory with our training dog pictures
+validation_cats_dir = os.path.join(validation_dir, 'cats')  # directory with our validation cat pictures
+validation_dogs_dir = os.path.join(validation_dir, 'dogs')  # directory with our validation dog pictures
+
+num_cats_tr = len(os.listdir(train_cats_dir))
+num_dogs_tr = len(os.listdir(train_dogs_dir))
+
+num_cats_val = len(os.listdir(validation_cats_dir))
+num_dogs_val = len(os.listdir(validation_dogs_dir))
+
+total_train = num_cats_tr + num_dogs_tr
+total_val = num_cats_val + num_dogs_val
+
+# Load and rescale the images
+
+train_image_generator = ImageDataGenerator(rescale=1./255) # Generator for our training data
+validation_image_generator = ImageDataGenerator(rescale=1./255) # Generator for our validation data
+
+image_gen_train = ImageDataGenerator(
+                    rescale=1./255,
+                    rotation_range=45,
+                    width_shift_range=.15,
+                    height_shift_range=.15,
+                    horizontal_flip=True,
+                    zoom_range=0.25
+                    )
+
+train_data_gen = image_gen_train.flow_from_directory(batch_size=batch_size,
+                                                     directory=train_dir,
+                                                     shuffle=True,
+                                                     target_size=(IMG_HEIGHT, IMG_WIDTH),
+                                                     class_mode='binary')
+
+image_gen_val = ImageDataGenerator(rescale=1./255)
+
+val_data_gen = image_gen_val.flow_from_directory(batch_size=batch_size,
+                                                 directory=validation_dir,
+                                                 target_size=(IMG_HEIGHT, IMG_WIDTH),
+
+                                                 class_mode='binary')
+
+optimizers = [ 'adam','sgd','rmsprop','adamax','adadelta']
 
 accuracies = []
 val_accuracies = []
@@ -105,12 +100,16 @@ losses = []
 val_losses =[]
 
 for idx in range (0,5):
-	model = generate_model(0.2,512,optimizers[idx],x_train)
+	model = generate_model(0.2,512,optimizers[idx])
 
-	history = model.fit_generator(datagen.flow(x_train, y_train,
-                                     batch_size=batch_size),
-                        epochs=epochs,
-                        validation_data=(x_test, y_test))
+	history = model.fit_generator(
+    	train_data_gen,
+    	steps_per_epoch=total_train // batch_size,
+    	epochs=epochs,
+    	validation_data=val_data_gen,
+    	validation_steps=total_val // batch_size
+	)
+
 
 	accuracies.append(history.history['acc'])
 	val_accuracies.append(history.history['val_acc'])
@@ -132,20 +131,3 @@ losses_df.to_csv("losses.csv")
 
 val_losses_df = pd.DataFrame([array for array in val_losses] ) 
 val_losses_df.to_csv("val_losses.csv")
-
-# plt.figure(figsize=(8, 8))
-# plt.subplot(1, 2, 1)
-# for idx in range (0,5):
-# 	plt.plot(epochs_range, accuracies[idx], label='Training Accuracy with dropout '+str(idx/10))
-# 	plt.plot(epochs_range, val_accuracies, label='Validation Accuracy with dropout '+str(idx/10))
-
-# plt.legend(loc='lower right')
-# plt.title('Training and Validation Accuracy')
-
-# plt.subplot(1, 2, 2)
-# for idx in range (0,5):
-# 	plt.plot(epochs_range, lossses[idx], label='Training Loss with dropout '+str(idx/10))
-# 	plt.plot(epochs_range, val_losses[idx], label='Validation Loss with dropout '+str(idx/10))
-# plt.legend(loc='upper right')
-# plt.title('Training and Validation Loss')
-# plt.show()
