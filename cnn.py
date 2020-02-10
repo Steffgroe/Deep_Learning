@@ -3,35 +3,96 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Conv2D, Flatten, Dropout, MaxPooling2D
+from tensorflow.keras.layers import Dense, Conv2D, Flatten, Dropout, MaxPooling2D, LeakyReLU
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 import os
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-def generate_model(dropout,HIDDEN_UNITS,OPTIMIZER):
-	model_new = Sequential([
-    Conv2D(16, 3, padding='same', activation='relu', 
-           input_shape=(IMG_HEIGHT, IMG_WIDTH ,3)),
-    MaxPooling2D(),
-    Dropout(dropout),
-    Conv2D(32, 3, padding='same', activation='relu'),
-    MaxPooling2D(),
-    Conv2D(64, 3, padding='same', activation='relu'),
-    MaxPooling2D(),
-    Dropout(dropout),
-    Flatten(),
-    Dense(HIDDEN_UNITS, activation='relu'),
-    Dense(1, activation='sigmoid')
-	])
+def generate_model(dropout,HIDDEN_UNITS,activation):
+	if activation == "leaky":
+		model_new = Sequential([
+	    Conv2D(16, 3, padding='same', activation='relu', 
+	           input_shape=(IMG_HEIGHT, IMG_WIDTH ,3)),
+	    MaxPooling2D(),
+	    Dropout(dropout),
+	    Conv2D(32, 3, padding='same', activation='relu'),
+	    MaxPooling2D(),
+	    Conv2D(64, 3, padding='same', activation='relu'),
+	    MaxPooling2D(),
+	    Dropout(dropout),
+	    Flatten(),
+	   	Dense(HIDDEN_UNITS),
+	   	LeakyReLU(alpha=0.3),
+	   	Dense(1, activation='sigmoid')
+		])
+	else:
+		model_new = Sequential([
+	    Conv2D(16, 3, padding='same', activation='relu', 
+	           input_shape=(IMG_HEIGHT, IMG_WIDTH ,3)),
+	    MaxPooling2D(),
+	    Dropout(dropout),
+	    Conv2D(32, 3, padding='same', activation='relu'),
+	    MaxPooling2D(),
+	    Conv2D(64, 3, padding='same', activation='relu'),
+	    MaxPooling2D(),
+	    Dropout(dropout),
+	    Flatten(),
+	   	Dense(HIDDEN_UNITS,activation =activation),
+	   	Dense(1, activation='sigmoid')	])
 
-	model_new.compile(optimizer=OPTIMIZER,
+	model_new.compile(optimizer='adam',
               loss='binary_crossentropy',
               metrics=['accuracy'])
 
 	model_new.summary()
 	return model_new
+def get_augmentation(n):
+	if n == 0:
+		print('0 reached')
+		image_gen_train = ImageDataGenerator(
+                    rescale=1./255,
+                    )
+	elif n == 1:
+		image_gen_train = ImageDataGenerator(
+                    rescale=1./255,
+                    rotation_range=45,
+                    )
+	elif n == 2:
+		image_gen_train = ImageDataGenerator(
+                    rescale=1./255,
+                    rotation_range=45,
+                     width_shift_range=.15,
+                    )
+	elif n ==3:
+		image_gen_train = ImageDataGenerator(
+                    rescale=1./255,
+                    rotation_range=45,
+                    width_shift_range=.15,
+                    height_shift_range=.15,
+                    )
+	elif n == 4:
+		image_gen_train = ImageDataGenerator(
+                    rescale=1./255,
+                    rotation_range=45,
+                    width_shift_range=.15,
+                    height_shift_range=.15,
+                    horizontal_flip=True,
+                    
+                    )
+	else:
+		image_gen_train = ImageDataGenerator(
+                    rescale=1./255,
+                    rotation_range=45,
+                    width_shift_range=.15,
+                    height_shift_range=.15,
+                    horizontal_flip=True,
+                    zoom_range=0.25
+                    )
+
+	return image_gen_train
+
 #Configurations for the model
 
 batch_size = 128
@@ -69,20 +130,7 @@ total_val = num_cats_val + num_dogs_val
 train_image_generator = ImageDataGenerator(rescale=1./255) # Generator for our training data
 validation_image_generator = ImageDataGenerator(rescale=1./255) # Generator for our validation data
 
-image_gen_train = ImageDataGenerator(
-                    rescale=1./255,
-                    rotation_range=45,
-                    width_shift_range=.15,
-                    height_shift_range=.15,
-                    horizontal_flip=True,
-                    zoom_range=0.25
-                    )
 
-train_data_gen = image_gen_train.flow_from_directory(batch_size=batch_size,
-                                                     directory=train_dir,
-                                                     shuffle=True,
-                                                     target_size=(IMG_HEIGHT, IMG_WIDTH),
-                                                     class_mode='binary')
 
 image_gen_val = ImageDataGenerator(rescale=1./255)
 
@@ -92,15 +140,20 @@ val_data_gen = image_gen_val.flow_from_directory(batch_size=batch_size,
 
                                                  class_mode='binary')
 
-optimizers = [ 'adam','sgd','rmsprop','adamax','adadelta']
 
 accuracies = []
 val_accuracies = []
 losses = []
 val_losses =[]
 
-for idx in range (0,5):
-	model = generate_model(0.2,512,optimizers[idx])
+for idx in range (0,6):
+	model = generate_model(0.2,512,'relu')
+	image_gen_train = get_augmentation(idx)
+	train_data_gen = image_gen_train.flow_from_directory(batch_size=batch_size,
+                                                     directory=train_dir,
+                                                     shuffle=True,
+                                                     target_size=(IMG_HEIGHT, IMG_WIDTH),
+                                                     class_mode='binary')
 
 	history = model.fit_generator(
     	train_data_gen,
@@ -121,13 +174,13 @@ for idx in range (0,5):
 epochs_range = range(epochs)
 
 accuracies_df = pd.DataFrame([array for array in accuracies] )
-accuracies_df.to_csv("accuracies.csv")
+accuracies_df.to_csv("activation/accuracies.csv")
 
 val_accuracies_df = pd.DataFrame([array for array in val_accuracies] )
-val_accuracies_df.to_csv("val_accuracies.csv")
+val_accuracies_df.to_csv("activation/val_accuracies.csv")
 
 losses_df = pd.DataFrame([array for array in losses] )
-losses_df.to_csv("losses.csv")
+losses_df.to_csv("activation/losses.csv")
 
 val_losses_df = pd.DataFrame([array for array in val_losses] ) 
-val_losses_df.to_csv("val_losses.csv")
+val_losses_df.to_csv("activation/val_losses.csv")
