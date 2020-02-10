@@ -46,5 +46,5 @@ for idx in range (0,len(optimizers)):
 	plt.plot([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15],temp, label='Validation Loss with dropout '+ str(optimizers[idx]))
 	plt.ylim(top=1,bottom=0.5)
 plt.title('Validation Loss')
-fig.legend(optimizers,loc='lower center',ncol=5)
+fig.legend(optimizers,loc='lower center',ncol=3)
 plt.show()
