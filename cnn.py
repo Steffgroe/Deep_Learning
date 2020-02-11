@@ -128,7 +128,7 @@ for idx in range (0,6):
 	datagen.fit(x_train)
 	
 	checkpoint = ModelCheckpoint("cnn.h5", monitor='val_acc', verbose=1, save_best_only=True, save_weights_only=False, mode='auto', period=1)
-	early = EarlyStopping(monitor='val_acc', min_delta=0, patience=20, verbose=1, mode='auto')
+	early = EarlyStopping(monitor='val_acc', min_delta=0, patience=40, verbose=1, mode='auto')
 	
 
 	history = model.fit_generator(datagen.flow(x_train, y_train,
