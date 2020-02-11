@@ -10,11 +10,14 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-def generate_model(dropout,HIDDEN_UNITS,activation):
+
+from tensorflow.keras.datasets import cifar10
+
+def generate_model(dropout,HIDDEN_UNITS,activation,OPTIMIZER,x_train):
 	if activation == "leaky":
 		model_new = Sequential([
-	    Conv2D(16, 3, padding='same', activation='relu', 
-	           input_shape=(IMG_HEIGHT, IMG_WIDTH ,3)),
+    	Conv2D(32, (3, 3), padding='same',
+                 input_shape=x_train.shape[1:]),
 	    MaxPooling2D(),
 	    Dropout(dropout),
 	    Conv2D(32, 3, padding='same', activation='relu'),
@@ -25,12 +28,12 @@ def generate_model(dropout,HIDDEN_UNITS,activation):
 	    Flatten(),
 	   	Dense(HIDDEN_UNITS),
 	   	LeakyReLU(alpha=0.3),
-	   	Dense(1, activation='sigmoid')
+	   	Dense(10, activation='sigmoid')
 		])
 	else:
 		model_new = Sequential([
-	    Conv2D(16, 3, padding='same', activation='relu', 
-	           input_shape=(IMG_HEIGHT, IMG_WIDTH ,3)),
+	    Conv2D(32, (3, 3), padding='same',
+                 input_shape=x_train.shape[1:]),
 	    MaxPooling2D(),
 	    Dropout(dropout),
 	    Conv2D(32, 3, padding='same', activation='relu'),
@@ -40,7 +43,7 @@ def generate_model(dropout,HIDDEN_UNITS,activation):
 	    Dropout(dropout),
 	    Flatten(),
 	   	Dense(HIDDEN_UNITS,activation =activation),
-	   	Dense(1, activation='sigmoid')	])
+	   	Dense(10, activation='sigmoid')	])
 
 	model_new.compile(optimizer='adam',
               loss='binary_crossentropy',
@@ -48,6 +51,7 @@ def generate_model(dropout,HIDDEN_UNITS,activation):
 
 	model_new.summary()
 	return model_new
+
 def get_augmentation(n):
 	if n == 0:
 		print('0 reached')
@@ -93,52 +97,23 @@ def get_augmentation(n):
 
 	return image_gen_train
 
-#Configurations for the model
+batch_size = 32
+num_classes = 10
+epochs = 100
+data_augmentation = True
+num_predictions = 20
+save_dir = os.path.join(os.getcwd(), 'saved_models')
+model_name = 'keras_cifar10_trained_model.h5'
 
-batch_size = 128
-epochs = 15
-IMG_HEIGHT = 150
-IMG_WIDTH = 150
-HIDDEN_UNITS =512
+# The data, split between train and test sets:
+(x_train, y_train), (x_test, y_test) = cifar10.load_data()
 
-# Load the data 
-_URL = 'https://storage.googleapis.com/mledu-datasets/cats_and_dogs_filtered.zip'
-
-path_to_zip = tf.keras.utils.get_file('cats_and_dogs.zip', origin=_URL, extract=True)
-
-PATH = os.path.join(os.path.dirname(path_to_zip), 'cats_and_dogs_filtered')
-
-train_dir = os.path.join(PATH, 'train')
-validation_dir = os.path.join(PATH, 'validation')
-
-train_cats_dir = os.path.join(train_dir, 'cats')  # directory with our training cat pictures
-train_dogs_dir = os.path.join(train_dir, 'dogs')  # directory with our training dog pictures
-validation_cats_dir = os.path.join(validation_dir, 'cats')  # directory with our validation cat pictures
-validation_dogs_dir = os.path.join(validation_dir, 'dogs')  # directory with our validation dog pictures
-
-num_cats_tr = len(os.listdir(train_cats_dir))
-num_dogs_tr = len(os.listdir(train_dogs_dir))
-
-num_cats_val = len(os.listdir(validation_cats_dir))
-num_dogs_val = len(os.listdir(validation_dogs_dir))
-
-total_train = num_cats_tr + num_dogs_tr
-total_val = num_cats_val + num_dogs_val
-
-# Load and rescale the images
-
-train_image_generator = ImageDataGenerator(rescale=1./255) # Generator for our training data
-validation_image_generator = ImageDataGenerator(rescale=1./255) # Generator for our validation data
-
-
-
-image_gen_val = ImageDataGenerator(rescale=1./255)
-
-val_data_gen = image_gen_val.flow_from_directory(batch_size=batch_size,
-                                                 directory=validation_dir,
-                                                 target_size=(IMG_HEIGHT, IMG_WIDTH),
-
-                                                 class_mode='binary')
+x_train = x_train.astype('float32')
+x_test = x_test.astype('float32')
+x_train /= 255
+x_test /= 255
+y_train = tf.keras.utils.to_categorical(y_train, num_classes)
+y_test = tf.keras.utils.to_categorical(y_test, num_classes)
 
 
 accuracies = []
@@ -147,22 +122,15 @@ losses = []
 val_losses =[]
 
 for idx in range (0,6):
-	model = generate_model(0.2,512,'relu')
-	image_gen_train = get_augmentation(idx)
-	train_data_gen = image_gen_train.flow_from_directory(batch_size=batch_size,
-                                                     directory=train_dir,
-                                                     shuffle=True,
-                                                     target_size=(IMG_HEIGHT, IMG_WIDTH),
-                                                     class_mode='binary')
+	model = generate_model(0.2,512,'relu','adam',x_train)
+	datagen = get_augmentation(idx)
+	datagen.fit(x_train)
+	
 
-	history = model.fit_generator(
-    	train_data_gen,
-    	steps_per_epoch=total_train // batch_size,
-    	epochs=epochs,
-    	validation_data=val_data_gen,
-    	validation_steps=total_val // batch_size
-	)
-
+	history = model.fit_generator(datagen.flow(x_train, y_train,
+                                     batch_size=batch_size),
+                      				 epochs=epochs,
+                        			validation_data=(x_test, y_test))
 
 	accuracies.append(history.history['acc'])
 	val_accuracies.append(history.history['val_acc'])
@@ -174,13 +142,13 @@ for idx in range (0,6):
 epochs_range = range(epochs)
 
 accuracies_df = pd.DataFrame([array for array in accuracies] )
-accuracies_df.to_csv("activation/accuracies.csv")
+accuracies_df.to_csv("augmentation/accuracies.csv")
 
 val_accuracies_df = pd.DataFrame([array for array in val_accuracies] )
-val_accuracies_df.to_csv("activation/val_accuracies.csv")
+val_accuracies_df.to_csv("augmentation/val_accuracies.csv")
 
 losses_df = pd.DataFrame([array for array in losses] )
-losses_df.to_csv("activation/losses.csv")
+losses_df.to_csv("augmentation/losses.csv")
 
 val_losses_df = pd.DataFrame([array for array in val_losses] ) 
-val_losses_df.to_csv("activation/val_losses.csv")
+val_losses_df.to_csv("augmentation/val_losses.csv")
