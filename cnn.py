@@ -4,6 +4,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Conv2D, Flatten, Dropout, MaxPooling2D, LeakyReLU
+from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 import os
@@ -126,11 +127,15 @@ for idx in range (0,6):
 	datagen = get_augmentation(idx)
 	datagen.fit(x_train)
 	
+	checkpoint = ModelCheckpoint("cnn.h5", monitor='val_acc', verbose=1, save_best_only=True, save_weights_only=False, mode='auto', period=1)
+	early = EarlyStopping(monitor='val_acc', min_delta=0, patience=20, verbose=1, mode='auto')
+	
 
 	history = model.fit_generator(datagen.flow(x_train, y_train,
                                      batch_size=batch_size),
                       				 epochs=epochs,
-                        			validation_data=(x_test, y_test))
+                        			validation_data=(x_test, y_test),
+                        			callbacks=[checkpoint,early])
 
 	accuracies.append(history.history['acc'])
 	val_accuracies.append(history.history['val_acc'])
