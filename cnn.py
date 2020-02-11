@@ -47,7 +47,7 @@ def generate_model(dropout,HIDDEN_UNITS,activation,OPTIMIZER,x_train):
 	   	Dense(10, activation='sigmoid')	])
 
 	model_new.compile(optimizer='adam',
-              loss='binary_crossentropy',
+              loss='categorical_crossentropy',
               metrics=['accuracy'])
 
 	model_new.summary()
@@ -128,7 +128,7 @@ for idx in range (0,6):
 	datagen.fit(x_train)
 	
 	checkpoint = ModelCheckpoint("cnn.h5", monitor='val_acc', verbose=1, save_best_only=True, save_weights_only=False, mode='auto', period=1)
-	early = EarlyStopping(monitor='val_acc', min_delta=0, patience=40, verbose=1, mode='auto')
+	early = EarlyStopping(monitor='val_acc', min_delta=0, patience=20, verbose=1, mode='auto')
 	
 
 	history = model.fit_generator(datagen.flow(x_train, y_train,
@@ -157,3 +157,40 @@ losses_df.to_csv("augmentation/losses.csv")
 
 val_losses_df = pd.DataFrame([array for array in val_losses] ) 
 val_losses_df.to_csv("augmentation/val_losses.csv")
+datagen.fit(x_train)
+optimizers = [ 'adam','sgd','rmsprop','adagrad','adadelta']
+
+accuracies = []
+val_accuracies = []
+losses = []
+val_losses =[]
+datagen = get_augmentation(5)
+datagen.fit(x_train)
+for idx in range (0,5):
+	model = generate_model(0.2,512,optimizers[idx],x_train)
+
+	history = model.fit_generator(datagen.flow(x_train, y_train,
+                                     batch_size=batch_size),
+                        epochs=epochs,
+                        validation_data=(x_test, y_test))
+
+	accuracies.append(history.history['acc'])
+	val_accuracies.append(history.history['val_acc'])
+
+	losses.append(history.history['loss'])
+	val_losses.append(history.history['val_loss'])
+
+
+epochs_range = range(epochs)
+
+accuracies_df = pd.DataFrame([array for array in accuracies] )
+accuracies_df.to_csv("activation/accuracies.csv")
+
+val_accuracies_df = pd.DataFrame([array for array in val_accuracies] )
+val_accuracies_df.to_csv("activation/val_accuracies.csv")
+
+losses_df = pd.DataFrame([array for array in losses] )
+losses_df.to_csv("activation/losses.csv")
+
+val_losses_df = pd.DataFrame([array for array in val_losses] ) 
+val_losses_df.to_csv("activation/val_losses.csv")
