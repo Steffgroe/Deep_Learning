@@ -14,7 +14,7 @@ import pandas as pd
 
 from tensorflow.keras.datasets import cifar10
 
-def generate_model(dropout,HIDDEN_UNITS,activation,OPTIMIZER,x_train):
+def generate_model(dropout,HIDDEN_UNITS,activation,optimizer,x_train):
 	if activation == "leaky":
 		model_new = Sequential([
     	Conv2D(32, (3, 3), padding='same',
@@ -46,7 +46,7 @@ def generate_model(dropout,HIDDEN_UNITS,activation,OPTIMIZER,x_train):
 	   	Dense(HIDDEN_UNITS,activation =activation),
 	   	Dense(10, activation='sigmoid')	])
 
-	model_new.compile(optimizer='adam',
+	model_new.compile(optimizer=optimizer,
               loss='categorical_crossentropy',
               metrics=['accuracy'])
 
@@ -117,16 +117,59 @@ y_train = tf.keras.utils.to_categorical(y_train, num_classes)
 y_test = tf.keras.utils.to_categorical(y_test, num_classes)
 
 
+# accuracies = []
+# val_accuracies = []
+# losses = []
+# val_losses =[]
+
+# for idx in range (0,6):
+# 	model = generate_model(0.2,512,'relu','adam',x_train)
+# 	datagen = get_augmentation(idx)
+# 	datagen.fit(x_train)
+	
+# 	checkpoint = ModelCheckpoint("cnn.h5", monitor='val_acc', verbose=1, save_best_only=True, save_weights_only=False, mode='auto', period=1)
+# 	early = EarlyStopping(monitor='val_acc', min_delta=0, patience=20, verbose=1, mode='auto')
+	
+
+# 	history = model.fit_generator(datagen.flow(x_train, y_train,
+#                                      batch_size=batch_size),
+#                       				 epochs=epochs,
+#                         			validation_data=(x_test, y_test),
+#                         			callbacks=[checkpoint,early])
+
+# 	accuracies.append(history.history['acc'])
+# 	val_accuracies.append(history.history['val_acc'])
+
+# 	losses.append(history.history['loss'])
+# 	val_losses.append(history.history['val_loss'])
+
+
+# epochs_range = range(epochs)
+
+# accuracies_df = pd.DataFrame([array for array in accuracies] )
+# accuracies_df.to_csv("augmentation/accuracies.csv")
+
+# val_accuracies_df = pd.DataFrame([array for array in val_accuracies] )
+# val_accuracies_df.to_csv("augmentation/val_accuracies.csv")
+
+# losses_df = pd.DataFrame([array for array in losses] )
+# losses_df.to_csv("augmentation/losses.csv")
+
+# val_losses_df = pd.DataFrame([array for array in val_losses] ) 
+# val_losses_df.to_csv("augmentation/val_losses.csv")
+# datagen.fit(x_train)
+activation =['leaky','relu','tanh','sigmoid','softsign']
+optimizers = [ 'adam','sgd','rmsprop','adagrad','adadelta']
+
 accuracies = []
 val_accuracies = []
 losses = []
 val_losses =[]
+datagen = get_augmentation(0)
+datagen.fit(x_train)
+for idx in range (0,len(activation)):
+	model = generate_model(0.2,512,activation[idx],'adam',x_train)
 
-for idx in range (0,6):
-	model = generate_model(0.2,512,'relu','adam',x_train)
-	datagen = get_augmentation(idx)
-	datagen.fit(x_train)
-	
 	checkpoint = ModelCheckpoint("cnn.h5", monitor='val_acc', verbose=1, save_best_only=True, save_weights_only=False, mode='auto', period=1)
 	early = EarlyStopping(monitor='val_acc', min_delta=0, patience=20, verbose=1, mode='auto')
 	
@@ -136,43 +179,6 @@ for idx in range (0,6):
                       				 epochs=epochs,
                         			validation_data=(x_test, y_test),
                         			callbacks=[checkpoint,early])
-
-	accuracies.append(history.history['acc'])
-	val_accuracies.append(history.history['val_acc'])
-
-	losses.append(history.history['loss'])
-	val_losses.append(history.history['val_loss'])
-
-
-epochs_range = range(epochs)
-
-accuracies_df = pd.DataFrame([array for array in accuracies] )
-accuracies_df.to_csv("augmentation/accuracies.csv")
-
-val_accuracies_df = pd.DataFrame([array for array in val_accuracies] )
-val_accuracies_df.to_csv("augmentation/val_accuracies.csv")
-
-losses_df = pd.DataFrame([array for array in losses] )
-losses_df.to_csv("augmentation/losses.csv")
-
-val_losses_df = pd.DataFrame([array for array in val_losses] ) 
-val_losses_df.to_csv("augmentation/val_losses.csv")
-datagen.fit(x_train)
-optimizers = [ 'adam','sgd','rmsprop','adagrad','adadelta']
-
-accuracies = []
-val_accuracies = []
-losses = []
-val_losses =[]
-datagen = get_augmentation(5)
-datagen.fit(x_train)
-for idx in range (0,5):
-	model = generate_model(0.2,512,optimizers[idx],x_train)
-
-	history = model.fit_generator(datagen.flow(x_train, y_train,
-                                     batch_size=batch_size),
-                        epochs=epochs,
-                        validation_data=(x_test, y_test))
 
 	accuracies.append(history.history['acc'])
 	val_accuracies.append(history.history['val_acc'])
