@@ -160,12 +160,41 @@ y_test = tf.keras.utils.to_categorical(y_test, num_classes)
 # datagen.fit(x_train)
 activation =['leaky','relu','tanh','sigmoid','softsign']
 optimizers = [ 'adam','sgd','rmsprop','adagrad','adadelta']
-
+test_accuracies = []
 accuracies = []
 val_accuracies = []
 losses = []
 val_losses =[]
-datagen = get_augmentation(0)
+datagen = ImageDataGenerator(
+    featurewise_center=False,  # set input mean to 0 over the dataset
+    samplewise_center=False,  # set each sample mean to 0
+    featurewise_std_normalization=False,  # divide inputs by std of the dataset
+    samplewise_std_normalization=False,  # divide each input by its std
+    zca_whitening=False,  # apply ZCA whitening
+    zca_epsilon=1e-06,  # epsilon for ZCA whitening
+    rotation_range=0,  # randomly rotate images in the range (degrees, 0 to 180)
+    # randomly shift images horizontally (fraction of total width)
+    width_shift_range=0.1,
+    # randomly shift images vertically (fraction of total height)
+    height_shift_range=0.1,
+    shear_range=0.,  # set range for random shear
+    zoom_range=0.,  # set range for random zoom
+    channel_shift_range=0.,  # set range for random channel shifts
+    # set mode for filling points outside the input boundaries
+    fill_mode='nearest',
+    cval=0.,  # value used for fill_mode = "constant"
+    horizontal_flip=True,  # randomly flip images
+    vertical_flip=False,  # randomly flip images
+    # set rescaling factor (applied before any other transformation)
+    rescale=None,
+    # set function that will be applied on each input
+    preprocessing_function=None,
+    # image data format, either "channels_first" or "channels_last"
+    data_format=None,
+    # fraction of images reserved for validation (strictly between 0 and 1)
+    validation_split=0.33)
+
+
 datagen.fit(x_train)
 for idx in range (0,len(activation)):
 	model = generate_model(0.2,512,activation[idx],'adam',x_train)
@@ -175,17 +204,19 @@ for idx in range (0,len(activation)):
 	
 
 	history = model.fit_generator(datagen.flow(x_train, y_train,
-                                     batch_size=batch_size),
+                                     batch_size=batch_size,subset ='training'),
                       				 epochs=epochs,
-                        			validation_data=(x_test, y_test),
+                      				 validation_data= datagen.flow(x_train, y_train,
+                                     batch_size=batch_size,subset ='validation'),
                         			callbacks=[checkpoint,early])
+	sore = model.evaluate(X_test, Y_test, show_accuracy=True, verbose=0)
 
 	accuracies.append(history.history['acc'])
 	val_accuracies.append(history.history['val_acc'])
 
 	losses.append(history.history['loss'])
 	val_losses.append(history.history['val_loss'])
-
+	test_accuracy = append(score)
 
 epochs_range = range(epochs)
 
@@ -194,6 +225,9 @@ accuracies_df.to_csv("activation/accuracies.csv")
 
 val_accuracies_df = pd.DataFrame([array for array in val_accuracies] )
 val_accuracies_df.to_csv("activation/val_accuracies.csv")
+
+test_accuracies_df = pd.DataFrame([array for array in test_accuracies] )
+tet_accuracies_df.to_csv("activation/test_accuracies.csv")
 
 losses_df = pd.DataFrame([array for array in losses] )
 losses_df.to_csv("activation/losses.csv")
