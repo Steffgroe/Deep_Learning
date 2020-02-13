@@ -116,49 +116,8 @@ x_test /= 255
 y_train = tf.keras.utils.to_categorical(y_train, num_classes)
 y_test = tf.keras.utils.to_categorical(y_test, num_classes)
 
-
-# accuracies = []
-# val_accuracies = []
-# losses = []
-# val_losses =[]
-
-# for idx in range (0,6):
-# 	model = generate_model(0.2,512,'relu','adam',x_train)
-# 	datagen = get_augmentation(idx)
-# 	datagen.fit(x_train)
-	
-# 	checkpoint = ModelCheckpoint("cnn.h5", monitor='val_acc', verbose=1, save_best_only=True, save_weights_only=False, mode='auto', period=1)
-# 	early = EarlyStopping(monitor='val_acc', min_delta=0, patience=20, verbose=1, mode='auto')
-	
-
-# 	history = model.fit_generator(datagen.flow(x_train, y_train,
-#                                      batch_size=batch_size),
-#                       				 epochs=epochs,
-#                         			validation_data=(x_test, y_test),
-#                         			callbacks=[checkpoint,early])
-
-# 	accuracies.append(history.history['acc'])
-# 	val_accuracies.append(history.history['val_acc'])
-
-# 	losses.append(history.history['loss'])
-# 	val_losses.append(history.history['val_loss'])
-
-
-# epochs_range = range(epochs)
-
-# accuracies_df = pd.DataFrame([array for array in accuracies] )
-# accuracies_df.to_csv("augmentation/accuracies.csv")
-
-# val_accuracies_df = pd.DataFrame([array for array in val_accuracies] )
-# val_accuracies_df.to_csv("augmentation/val_accuracies.csv")
-
-# losses_df = pd.DataFrame([array for array in losses] )
-# losses_df.to_csv("augmentation/losses.csv")
-
-# val_losses_df = pd.DataFrame([array for array in val_losses] ) 
-# val_losses_df.to_csv("augmentation/val_losses.csv")
-# datagen.fit(x_train)
 activation =['leaky','relu','tanh','sigmoid','softsign']
+# activation = ['relu']
 optimizers = [ 'adam','sgd','rmsprop','adagrad','adadelta']
 test_accuracies = []
 accuracies = []
@@ -200,7 +159,7 @@ for idx in range (0,len(activation)):
 	model = generate_model(0.2,512,activation[idx],'adam',x_train)
 
 	checkpoint = ModelCheckpoint("cnn.h5", monitor='val_acc', verbose=1, save_best_only=True, save_weights_only=False, mode='auto', period=1)
-	early = EarlyStopping(monitor='val_acc', min_delta=0, patience=20, verbose=1, mode='auto')
+	early = EarlyStopping(monitor='val_acc', min_delta=0, patience=10, verbose=1, mode='auto')
 	
 
 	history = model.fit_generator(datagen.flow(x_train, y_train,
@@ -209,14 +168,14 @@ for idx in range (0,len(activation)):
                       				 validation_data= datagen.flow(x_train, y_train,
                                      batch_size=batch_size,subset ='validation'),
                         			callbacks=[checkpoint,early])
-	sore = model.evaluate(X_test, Y_test, show_accuracy=True, verbose=0)
+	score = model.evaluate(x_test, y_test, verbose=0)
 
 	accuracies.append(history.history['acc'])
 	val_accuracies.append(history.history['val_acc'])
 
 	losses.append(history.history['loss'])
 	val_losses.append(history.history['val_loss'])
-	test_accuracy = append(score)
+	test_accuracies.append(score)
 
 epochs_range = range(epochs)
 
@@ -226,7 +185,7 @@ accuracies_df.to_csv("activation/accuracies.csv")
 val_accuracies_df = pd.DataFrame([array for array in val_accuracies] )
 val_accuracies_df.to_csv("activation/val_accuracies.csv")
 
-test_accuracies_df = pd.DataFrame([array for array in test_accuracies] )
+test_accuracies_df = pd.DataFrame(test_accuracies )
 tet_accuracies_df.to_csv("activation/test_accuracies.csv")
 
 losses_df = pd.DataFrame([array for array in losses] )
@@ -234,3 +193,48 @@ losses_df.to_csv("activation/losses.csv")
 
 val_losses_df = pd.DataFrame([array for array in val_losses] ) 
 val_losses_df.to_csv("activation/val_losses.csv")
+
+test_accuracies = []
+accuracies = []
+val_accuracies = []
+losses = []
+val_losses =[]
+
+for idx in range (0,len(optimizers)):
+	model = generate_model(0.2,512,'relu',optimizers[idx],x_train)
+
+	checkpoint = ModelCheckpoint("cnn.h5", monitor='val_acc', verbose=1, save_best_only=True, save_weights_only=False, mode='auto', period=1)
+	early = EarlyStopping(monitor='val_acc', min_delta=0, patience=10, verbose=1, mode='auto')
+	
+
+	history = model.fit_generator(datagen.flow(x_train, y_train,
+                                     batch_size=batch_size,subset ='training'),
+                      				 epochs=epochs,
+                      				 validation_data= datagen.flow(x_train, y_train,
+                                     batch_size=batch_size,subset ='validation'),
+                        			callbacks=[checkpoint,early])
+	score = model.evaluate(x_test, y_test, verbose=0)
+
+	accuracies.append(history.history['acc'])
+	val_accuracies.append(history.history['val_acc'])
+
+	losses.append(history.history['loss'])
+	val_losses.append(history.history['val_loss'])
+	test_accuracies.append(score)
+
+epochs_range = range(epochs)
+
+accuracies_df = pd.DataFrame([array for array in accuracies] )
+accuracies_df.to_csv("optimizers/accuracies.csv")
+
+val_accuracies_df = pd.DataFrame([array for array in val_accuracies] )
+val_accuracies_df.to_csv("optimizers/val_accuracies.csv")
+
+test_accuracies_df = pd.DataFrame(test_accuracies )
+tet_accuracies_df.to_csv("optimizers/test_accuracies.csv")
+
+losses_df = pd.DataFrame([array for array in losses] )
+losses_df.to_csv("optimizers/losses.csv")
+
+val_losses_df = pd.DataFrame([array for array in val_losses] ) 
+val_losses_df.to_csv("optimizers/val_losses.csv")
