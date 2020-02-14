@@ -15,6 +15,10 @@ import pandas as pd
 from tensorflow.keras.datasets import cifar10
 
 def generate_model(dropout,HIDDEN_UNITS,activation,optimizer,x_train):
+    if optimizer is 'sgd':
+        optimizer = tensorflow.keras.optimizers.SGD(lr=0.1 ,decay=1e-6, momentum=0.9, nesterov=True)
+    if optimizer is 'adadelta':
+        optimizer = tensorflow.keras.optimizers.Adadelta(learning_rate=0.1, rho=0.95)
 	if activation == "leaky":
 		model_new = Sequential([
     	Conv2D(32, (3, 3), padding='same',
@@ -53,50 +57,6 @@ def generate_model(dropout,HIDDEN_UNITS,activation,optimizer,x_train):
 	model_new.summary()
 	return model_new
 
-def get_augmentation(n):
-	if n == 0:
-		print('0 reached')
-		image_gen_train = ImageDataGenerator(
-                    rescale=1./255,
-                    )
-	elif n == 1:
-		image_gen_train = ImageDataGenerator(
-                    rescale=1./255,
-                    rotation_range=45,
-                    )
-	elif n == 2:
-		image_gen_train = ImageDataGenerator(
-                    rescale=1./255,
-                    rotation_range=45,
-                     width_shift_range=.15,
-                    )
-	elif n ==3:
-		image_gen_train = ImageDataGenerator(
-                    rescale=1./255,
-                    rotation_range=45,
-                    width_shift_range=.15,
-                    height_shift_range=.15,
-                    )
-	elif n == 4:
-		image_gen_train = ImageDataGenerator(
-                    rescale=1./255,
-                    rotation_range=45,
-                    width_shift_range=.15,
-                    height_shift_range=.15,
-                    horizontal_flip=True,
-                    
-                    )
-	else:
-		image_gen_train = ImageDataGenerator(
-                    rescale=1./255,
-                    rotation_range=45,
-                    width_shift_range=.15,
-                    height_shift_range=.15,
-                    horizontal_flip=True,
-                    zoom_range=0.25
-                    )
-
-	return image_gen_train
 
 batch_size = 32
 num_classes = 10
