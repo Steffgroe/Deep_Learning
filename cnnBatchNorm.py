@@ -3,7 +3,7 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Conv2D, Flatten, Dropout, MaxPooling2D, LeakyReLU
+from tensorflow.keras.layers import Dense, Conv2D, Flatten, Dropout, MaxPooling2D, LeakyReLU, BatchNormalization
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
@@ -19,43 +19,53 @@ def generate_model(dropout,HIDDEN_UNITS,activation,optimizer,x_train):
         optimizer = tensorflow.keras.optimizers.SGD(lr=0.1 ,decay=1e-6, momentum=0.9, nesterov=True)
     if optimizer is 'adadelta':
         optimizer = tensorflow.keras.optimizers.Adadelta(learning_rate=0.1, rho=0.95)
-	if activation == "leaky":
+	
+    if activation == "leaky":
 		model_new = Sequential([
     	Conv2D(32, (3, 3), padding='same',
                  input_shape=x_train.shape[1:]),
-	    MaxPooling2D(),
+	    BatchNormalization(),
+        MaxPooling2D(),
 	    Dropout(dropout),
 	    Conv2D(32, 3, padding='same', activation='relu'),
-	    MaxPooling2D(),
+	    BatchNormalization(),
+        MaxPooling2D(),
 	    Conv2D(64, 3, padding='same', activation='relu'),
-	    MaxPooling2D(),
+	    BatchNormalization(),
+        MaxPooling2D(),
 	    Dropout(dropout),
 	    Flatten(),
 	   	Dense(HIDDEN_UNITS),
 	   	LeakyReLU(alpha=0.3),
+        BatchNormalization(),
 	   	Dense(10, activation='sigmoid')
 		])
-	else:
+    else:
 		model_new = Sequential([
 	    Conv2D(32, (3, 3), padding='same',
                  input_shape=x_train.shape[1:]),
+        BatchNormalization(),
 	    MaxPooling2D(),
 	    Dropout(dropout),
 	    Conv2D(32, 3, padding='same', activation='relu'),
-	    MaxPooling2D(),
+	    BatchNormalization(),
+        MaxPooling2D(),
 	    Conv2D(64, 3, padding='same', activation='relu'),
-	    MaxPooling2D(),
+	    BatchNormalization(),
+        MaxPooling2D(),
 	    Dropout(dropout),
 	    Flatten(),
 	   	Dense(HIDDEN_UNITS,activation =activation),
+        BatchNormalization(),
 	   	Dense(10, activation='sigmoid')	])
 
-	model_new.compile(optimizer=optimizer,
+    print(optimizer)
+    model_new.compile(optimizer=optimizer,
               loss='categorical_crossentropy',
               metrics=['accuracy'])
 
-	model_new.summary()
-	return model_new
+    model_new.summary()
+    return model_new
 
 
 batch_size = 32
@@ -115,44 +125,6 @@ datagen = ImageDataGenerator(
 
 
 datagen.fit(x_train)
-# for idx in range (0,len(activation)):
-# 	model = generate_model(0.2,512,activation[idx],'adam',x_train)
-
-# 	checkpoint = ModelCheckpoint("cnn.h5", monitor='val_acc', verbose=1, save_best_only=True, save_weights_only=False, mode='auto', period=1)
-# 	early = EarlyStopping(monitor='val_acc', min_delta=0.0, patience=5, verbose=1, mode='auto')
-	
-
-# 	history = model.fit_generator(datagen.flow(x_train, y_train,
-#                                      batch_size=batch_size,subset ='training'),
-#                       				 epochs=epochs,
-#                       				 validation_data= datagen.flow(x_train, y_train,
-#                                      batch_size=batch_size,subset ='validation'),
-#                         			callbacks=[checkpoint,early])
-# 	score = model.evaluate(x_test, y_test, verbose=0)
-
-# 	accuracies.append(history.history['acc'])
-# 	val_accuracies.append(history.history['val_acc'])
-
-# 	losses.append(history.history['loss'])
-# 	val_losses.append(history.history['val_loss'])
-# 	test_accuracies.append(score)
-# 	print(test_accuracies)
-# epochs_range = range(epochs)
-
-# accuracies_df = pd.DataFrame([array for array in accuracies] )
-# accuracies_df.to_csv("activation/accuracies.csv")
-
-# val_accuracies_df = pd.DataFrame([array for array in val_accuracies] )
-# val_accuracies_df.to_csv("activation/val_accuracies.csv")
-
-# test_accuracies_df = pd.DataFrame(test_accuracies )
-# test_accuracies_df.to_csv("activation/test_accuracies.csv")
-
-# losses_df = pd.DataFrame([array for array in losses] )
-# losses_df.to_csv("activation/losses.csv")
-
-# val_losses_df = pd.DataFrame([array for array in val_losses] ) 
-# val_losses_df.to_csv("activation/val_losses.csv")
 
 test_accuracies = []
 accuracies = []
@@ -161,7 +133,7 @@ losses = []
 val_losses =[]
 
 for idx in range (0,len(optimizers)):
-	model = generate_model(0.2,512,'leaky',optimizers[idx],x_train)
+	model = generate_model(0.2,512,'relu',optimizers[idx],x_train)
 
 	checkpoint = ModelCheckpoint("cnn.h5", monitor='val_acc', verbose=1, save_best_only=True, save_weights_only=False, mode='auto', period=1)
 	early = EarlyStopping(monitor='val_acc', min_delta=0, patience=10, verbose=1, mode='auto')
@@ -185,16 +157,16 @@ for idx in range (0,len(optimizers)):
 epochs_range = range(epochs)
 
 accuracies_df = pd.DataFrame([array for array in accuracies] )
-accuracies_df.to_csv("optimizers/accuracies.csv")
+accuracies_df.to_csv("batch/accuracies.csv")
 
 val_accuracies_df = pd.DataFrame([array for array in val_accuracies] )
-val_accuracies_df.to_csv("optimizers/val_accuracies.csv")
+val_accuracies_df.to_csv("batch/val_accuracies.csv")
 
 test_accuracies_df = pd.DataFrame(test_accuracies )
-test_accuracies_df.to_csv("optimizers/test_accuracies.csv")
+test_accuracies_df.to_csv("batch/test_accuracies.csv")
 
 losses_df = pd.DataFrame([array for array in losses] )
-losses_df.to_csv("optimizers/losses.csv")
+losses_df.to_csv("batch/losses.csv")
 
 val_losses_df = pd.DataFrame([array for array in val_losses] ) 
-val_losses_df.to_csv("optimizers/val_losses.csv")
+val_losses_df.to_csv("batch/val_losses.csv")
