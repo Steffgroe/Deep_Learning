@@ -133,9 +133,10 @@ losses = []
 val_losses =[]
 
 for idx in range (0,len(optimizers)):
+	name = 'cnn ' + str(optimizers[idx] +'.h5')
 	model = generate_model(0.2,512,'relu',optimizers[idx],x_train)
 
-	checkpoint = ModelCheckpoint("cnn.h5", monitor='val_acc', verbose=1, save_best_only=True, save_weights_only=False, mode='auto', period=1)
+	checkpoint = ModelCheckpoint(name, monitor='val_acc', verbose=1, save_best_only=True, save_weights_only=False, mode='auto', period=1)
 	early = EarlyStopping(monitor='val_acc', min_delta=0, patience=10, verbose=1, mode='auto')
 	
 
@@ -145,6 +146,7 @@ for idx in range (0,len(optimizers)):
                       				 validation_data= datagen.flow(x_train, y_train,
                                      batch_size=batch_size,subset ='validation'),
                         			callbacks=[checkpoint,early])
+	model.load_weights(name)
 	score = model.evaluate(x_test, y_test, verbose=0)
 
 	accuracies.append(history.history['acc'])
