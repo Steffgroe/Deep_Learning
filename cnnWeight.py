@@ -7,11 +7,12 @@ from tensorflow.keras.regularizers import l1, l2
 from tensorflow.keras.layers import Dense, Conv2D, Flatten, Dropout, MaxPooling2D, LeakyReLU
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
-
+from tensorflow.keras.callbacks import TensorBoard
 import os
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+import datetime
 
 from tensorflow.keras.datasets import cifar10
 
@@ -44,7 +45,7 @@ def generate_model(dropout,HIDDEN_UNITS,activation,regularizer,lr,x_train):
 	return model_new
 
 
-batch_size = 32
+batch_size = 128
 num_classes = 10
 epochs = 100
 data_augmentation = True
@@ -109,23 +110,26 @@ losses = []
 val_losses =[]
 learning_rate = 0.1;
 for idx in range (0,len(regularizer)):
-	for idx2 in range(0,4):
+	for idx2 in range(0,5):
 		model = generate_model(0.2,512,'leaky',regularizer[idx],learning_rate,x_train)
-		
+		log_dir="logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+        tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=0)
 
-		history = model.fit_generator(datagen.flow(x_train, y_train,
-	                                     batch_size=batch_size,subset ='training'),
-	                      				 epochs=epochs,
-	                      				 validation_data= datagen.flow(x_train, y_train,
-	                                     batch_size=batch_size,subset ='validation'))
-		score = model.evaluate(x_test, y_test, verbose=0)
-		learning_rate /=10;
-		accuracies.append(history.history['acc'])
-		val_accuracies.append(history.history['val_acc'])
 
-		losses.append(history.history['loss'])
-		val_losses.append(history.history['val_loss'])
-		test_accuracies.append(score)
+        history = model.fit_generator(datagen.flow(x_train, y_train,
+                                         batch_size=batch_size,subset ='training'),
+                          				 epochs=epochs,
+                          				 validation_data= datagen.flow(x_train, y_train,
+                                         batch_size=batch_size,subset ='validation'),
+                                         callbacks=[tensorboard_callback])
+        score = model.evaluate(x_test, y_test, verbose=0)
+        learning_rate /=10;
+        accuracies.append(history.history['acc'])
+        val_accuracies.append(history.history['val_acc'])
+
+        losses.append(history.history['loss'])
+        val_losses.append(history.history['val_loss'])
+        test_accuracies.append(score)
 
 epochs_range = range(epochs)
 
