@@ -57,7 +57,7 @@ def generate_model(dropout,HIDDEN_UNITS,activation,optimizer,x_train):
 	    Flatten(),
 	   	Dense(HIDDEN_UNITS,activation =activation),
         BatchNormalization(),
-	   	Dense(10, activation='sigmoid')	])
+	   	Dense(10, activation='softmax')	])
 
     print(optimizer)
     model_new.compile(optimizer=optimizer,

@@ -18,22 +18,22 @@ from tensorflow.keras.datasets import cifar10
 
 def generate_model(dropout,HIDDEN_UNITS,activation,regularizer,lr,x_train):
     if regularizer is "l2":
-        regularizer = l2(lr)
+        regularizer = l2()
     else:
-        regularizer = l1(lr)
+        regularizer = l1()
 
 	model_new = Sequential([
-    Conv2D(32, (3, 3), padding='same', activity_regularizer =regularizer,
+    Conv2D(32, (3, 3), padding='same',  
              input_shape=x_train.shape[1:]),
     MaxPooling2D(),
     Dropout(dropout),
-    Conv2D(32, 3, padding='same', activation='relu',activity_regularizer =regularizer),
+    Conv2D(32, 3, padding='same', activation='relu' ),
     MaxPooling2D(),
-    Conv2D(64, 3, padding='same', activation='relu',activity_regularizer =regularizer,),
+    Conv2D(64, 3, padding='same', activation='relu'),
     MaxPooling2D(),
     Dropout(dropout),
     Flatten(),
-   	Dense(HIDDEN_UNITS,activity_regularizer =regularizer),
+   	Dense(HIDDEN_UNITS, kernel_regularizer = regularizer),
    	LeakyReLU(alpha=0.3),
    	Dense(10, activation='sigmoid')	])
 
@@ -45,7 +45,7 @@ def generate_model(dropout,HIDDEN_UNITS,activation,regularizer,lr,x_train):
 	return model_new
 
 
-batch_size = 128
+batch_size = 32
 num_classes = 10
 epochs = 100
 data_augmentation = True
@@ -108,11 +108,12 @@ accuracies = []
 val_accuracies = []
 losses = []
 val_losses =[]
-learning_rate = 0.1;
+
 for idx in range (0,len(regularizer)):
-	for idx2 in range(0,5):
-		model = generate_model(0.2,512,'leaky',regularizer[idx],learning_rate,x_train)
-		log_dir="logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    learning_rate = 0.1;
+    for idx2 in range(0,4):
+        model = generate_model(0.2,512,'leaky',regularizer[idx],learning_rate,x_train)
+        log_dir="logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
         tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=0)
 
 
