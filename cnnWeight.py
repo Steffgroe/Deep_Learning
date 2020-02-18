@@ -18,9 +18,9 @@ from tensorflow.keras.datasets import cifar10
 
 def generate_model(dropout,HIDDEN_UNITS,activation,regularizer,lr,x_train):
     if regularizer is "l2":
-        regularizer = l2()
+        regularizer = l2(lr)
     else:
-        regularizer = l1()
+        regularizer = l1(lr)
 
 	model_new = Sequential([
     Conv2D(32, (3, 3), padding='same',  
