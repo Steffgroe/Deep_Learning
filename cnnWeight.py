@@ -18,9 +18,9 @@ from tensorflow.keras.datasets import cifar10
 
 def generate_model(dropout,HIDDEN_UNITS,activation,regularizer,lr,x_train):
     if regularizer is "l2":
-        regularizer = l2(lr)
+        regularizer = l2(0.1)
     else:
-        regularizer = l1(lr)
+        regularizer = l1(0.01)
 
 	model_new = Sequential([
     Conv2D(32, (3, 3), padding='same',  
@@ -45,7 +45,7 @@ def generate_model(dropout,HIDDEN_UNITS,activation,regularizer,lr,x_train):
 	return model_new
 
 
-batch_size = 32
+batch_size = 64
 num_classes = 10
 epochs = 100
 data_augmentation = True
@@ -110,7 +110,7 @@ losses = []
 val_losses =[]
 
 for idx in range (0,len(regularizer)):
-    learning_rate = 0.1;
+    learning_rate = 0.01;
     for idx2 in range(0,4):
         model = generate_model(0.2,512,'leaky',regularizer[idx],learning_rate,x_train)
         log_dir="logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
