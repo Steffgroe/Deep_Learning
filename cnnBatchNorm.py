@@ -38,7 +38,7 @@ def generate_model(dropout,HIDDEN_UNITS,activation,optimizer,x_train):
 	   	Dense(HIDDEN_UNITS),
 	   	LeakyReLU(alpha=0.3),
         BatchNormalization(),
-	   	Dense(10, activation='sigmoid')
+	   	Dense(10, activation='softmax')
 		])
     else:
 		model_new = Sequential([
@@ -133,7 +133,7 @@ losses = []
 val_losses =[]
 
 for idx in range (0,len(optimizers)):
-	name = 'cnn ' + str(optimizers[idx] +'.h5')
+	name = 'batch2/cnn ' + str(optimizers[idx] +'.h5')
 	model = generate_model(0.2,512,'relu',optimizers[idx],x_train)
 
 	checkpoint = ModelCheckpoint(name, monitor='val_acc', verbose=1, save_best_only=True, save_weights_only=False, mode='auto', period=1)
@@ -159,16 +159,16 @@ for idx in range (0,len(optimizers)):
 epochs_range = range(epochs)
 
 accuracies_df = pd.DataFrame([array for array in accuracies] )
-accuracies_df.to_csv("batch/accuracies.csv")
+accuracies_df.to_csv("batch2/accuracies.csv")
 
 val_accuracies_df = pd.DataFrame([array for array in val_accuracies] )
-val_accuracies_df.to_csv("batch/val_accuracies.csv")
+val_accuracies_df.to_csv("batch2/val_accuracies.csv")
 
 test_accuracies_df = pd.DataFrame(test_accuracies )
-test_accuracies_df.to_csv("batch/test_accuracies.csv")
+test_accuracies_df.to_csv("batch2/test_accuracies.csv")
 
 losses_df = pd.DataFrame([array for array in losses] )
-losses_df.to_csv("batch/losses.csv")
+losses_df.to_csv("batch2/losses.csv")
 
 val_losses_df = pd.DataFrame([array for array in val_losses] ) 
-val_losses_df.to_csv("batch/val_losses.csv")
+val_losses_df.to_csv("batch2/val_losses.csv")
